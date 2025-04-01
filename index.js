@@ -14,12 +14,13 @@ const PORT = 5000;
 
 app.use(express.json());
 app.use(cors({
-    origin: "https://gruppur.onrender.com/",
-    credentials: true,
+    origin: "https://gruppur.onrender.com",  // Set this explicitly, do NOT use "*"
+    credentials: true,  // Required for cookies/auth headers
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
 }));
   
+// Handle preflight requests explicitly
 app.options("*", cors());
 app.use(cookieParser());
 connectDB();
