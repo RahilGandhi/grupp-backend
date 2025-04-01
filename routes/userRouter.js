@@ -3,22 +3,24 @@ const mongoose = require('mongoose')
 const User = require('../schemas/userSchema')
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const authMiddleware = require('../middlewares/authMiddleware');
+const logger = require('../logger')
 
 const router = express.Router();
 
-const verifyToken = (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).json({ message: "Access Denied" });
+// const verifyToken = (req, res, next) => {
+//     const token = req.cookies.token;
+//     if (!token) return res.status(401).json({ message: "Access Denied" });
   
-    try {
-      const verified = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('User Verified', verified)
-      req.user = verified;
-      next();
-    } catch (err) {
-      res.status(400).json({ message: "Invalid Token" });
-    }
-};
+//     try {
+//       const verified = jwt.verify(token, process.env.JWT_SECRET);
+//       console.log('User Verified', verified)
+//       req.user = verified;
+//       next();
+//     } catch (err) {
+//       res.status(400).json({ message: "Invalid Token" });
+//     }
+// };
 
 router.post("/register", async (req, res) => {
     try {
@@ -44,7 +46,7 @@ router.post("/login", async (req, res) => {
       if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
   
       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-  
+      token && logger.info("User Login Detectected", token, user._id);
       res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "strict" });
       res.json({ message: "Login successful", token });
     } catch (err) {
@@ -52,7 +54,7 @@ router.post("/login", async (req, res) => {
     }
 });
 
-router.get("/profile", verifyToken, async (req, res) => {
+router.get("/profile", authMiddleware, async (req, res) => {
     const user = await User.findById(req.user.userId).select("-password");
     res.json(user);
 });
